@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 type CartItem = {
   id: string;
@@ -33,18 +34,25 @@ interface AppState {
   setCurrentOrder: (order: Order | null) => void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  orders: [],
-  addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
-  updateOrderStatus: (orderId, status) => 
-    set((state) => ({
-      orders: state.orders.map(order => 
-        order.id === orderId ? { ...order, order_status: status } : order
-      ),
-      currentOrder: state.currentOrder?.id === orderId 
-        ? { ...state.currentOrder, order_status: status } 
-        : state.currentOrder
-    })),
-  currentOrder: null,
-  setCurrentOrder: (order) => set({ currentOrder: order })
-}));
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      orders: [],
+      addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
+      updateOrderStatus: (orderId, status) => 
+        set((state) => ({
+          orders: state.orders.map(order => 
+            order.id === orderId ? { ...order, order_status: status } : order
+          ),
+          currentOrder: state.currentOrder?.id === orderId 
+            ? { ...state.currentOrder, order_status: status } 
+            : state.currentOrder
+        })),
+      currentOrder: null,
+      setCurrentOrder: (order) => set({ currentOrder: order })
+    }),
+    {
+      name: 'coffee-shop-storage', // unique name for localStorage key
+    }
+  )
+);

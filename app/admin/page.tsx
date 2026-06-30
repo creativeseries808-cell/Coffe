@@ -30,7 +30,7 @@ const statuses = [
 ];
 
 export default function AdminPage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!supabase ? false : true);
   // Use global store
   const { orders, updateOrderStatus, addOrder } = useAppStore();
 
