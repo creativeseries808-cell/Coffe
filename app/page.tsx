@@ -30,6 +30,7 @@ type Order = {
   payment_status: 'pending' | 'paid' | 'failed';
   order_status: OrderStatus;
   created_at: string;
+  items?: CartItem[];
 };
 
 // Demo mode: Supabase integration disabled by default
@@ -216,7 +217,8 @@ export default function CoffeeShop() {
         arrival_time: orderType !== 'dine-in' ? arrivalTime : null,
         total_price: totalPrice,
         payment_status: 'paid',
-        order_status: 'received'
+        order_status: 'received',
+        items: cart
       };
 
       if (supabase) {
@@ -230,17 +232,18 @@ export default function CoffeeShop() {
           throw error;
         }
 
-        setCurrentOrder(data);
+        setCurrentOrder({ ...data, items: cart });
       } else {
         const mockOrder: Order = {
           id: `ORDER-${Date.now()}`,
           customer_phone: customerPhone,
           order_type: orderType,
           arrival_time: orderType !== 'dine-in' ? arrivalTime : undefined,
-          total_price: calculateTotal(),
+          total_price: totalPrice,
           payment_status: 'paid',
           order_status: 'received',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          items: cart
         };
         setCurrentOrder(mockOrder);
       }
@@ -518,125 +521,175 @@ export default function CoffeeShop() {
     const statuses = [
       { 
         key: 'received', 
-        label: 'Order Received', 
-        icon: '📥',
-        message: 'We have received your order!',
-        etaMinutes: 6
+        title: 'Order Placed', 
+        subtitle: 'Your order has been received', 
+        icon: '📝',
+        description: 'We have received your order and are preparing it'
       },
       { 
         key: 'brewing', 
-        label: 'Brewing', 
+        title: 'Preparing', 
+        subtitle: 'Your order is being prepared', 
         icon: '☕',
-        message: 'Your coffee is being brewed fresh!',
-        etaMinutes: 4
+        description: 'Our barista is making your coffee fresh'
       },
       { 
         key: 'ready', 
-        label: 'Ready', 
-        icon: '🏁',
-        message: 'Your order is ready for pickup!',
-        etaMinutes: 1
+        title: 'Ready', 
+        subtitle: 'Your order is ready', 
+        icon: '✅',
+        description: 'Your coffee is ready for pickup!'
       },
       { 
         key: 'completed', 
-        label: 'Completed', 
-        icon: '✨',
-        message: 'Enjoy your coffee! Thank you for your order!',
-        etaMinutes: 0
+        title: 'Completed', 
+        subtitle: 'Order delivered', 
+        icon: '🎉',
+        description: 'Enjoy your coffee! See you soon!'
       }
     ];
 
     const currentIndex = statuses.findIndex(s => s.key === currentOrder?.order_status) || 0;
     const currentStatus = statuses[currentIndex];
-    const totalStages = statuses.length;
-    const progressPercentage = Math.round(((currentIndex + 1) / totalStages) * 100);
+
+    // Format time
+    const formatOrderTime = () => {
+      if (!currentOrder?.created_at) return '';
+      const date = new Date(currentOrder.created_at);
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    };
 
     return (
-      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
-        <div className="max-w-md w-full">
+      <div className="min-h-screen bg-background p-4 pb-20">
+        <div className="max-w-lg mx-auto">
+          {/* Header */}
           <button
             onClick={() => setStage(1)}
-            className="text-accent mb-6 hover:underline"
+            className="text-accent mb-6 hover:underline flex items-center gap-2"
           >
-            ← New Order
+            <span>←</span> New Order
           </button>
 
+          {/* Order Header Card */}
           <div className="bg-card rounded-2xl p-6 mb-6">
-            <h2 className="text-2xl font-bold mb-2 text-center">Live Order Tracker</h2>
-            <p className="text-center text-gray-400 mb-6">Order ID: {currentOrder?.id}</p>
-
-            {/* Large Progress Bar */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Order Progress</span>
-                <span className="text-sm font-bold text-accent">{progressPercentage}%</span>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-1">Order #{currentOrder?.id?.slice(-6)}</h2>
+                <p className="text-gray-400 text-sm">Placed at {formatOrderTime()}</p>
               </div>
-              <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
-                <div 
-                  className="h-full bg-accent transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
-                />
-              </div>
+              <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                currentOrder?.order_status === 'completed' 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-accent text-background'
+              }`}>
+                {currentStatus.title}
+              </span>
             </div>
 
-            {/* Current Status Section */}
-            <div className="text-center mb-8">
-              <div className="w-20 h-20 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">{currentStatus.icon}</span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">{currentStatus.label}</h3>
-              <p className="text-gray-300">{currentStatus.message}</p>
-              
-              {currentStatus.etaMinutes > 0 && (
-                <div className="mt-4 p-4 bg-gray-700 rounded-xl">
-                  <p className="text-sm text-gray-400 mb-1">Estimated Time Remaining</p>
-                  <p className="text-3xl font-bold text-accent">{currentStatus.etaMinutes} min</p>
+            {/* Order Type Badge */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-lg">
+                {currentOrder?.order_type === 'drive-thru' && '🚗'}
+                {currentOrder?.order_type === 'pick-up' && '🛍️'}
+                {currentOrder?.order_type === 'dine-in' && '🪑'}
+              </span>
+              <span className="text-gray-300 capitalize">{currentOrder?.order_type}</span>
+            </div>
+
+            {/* Order Summary */}
+            {currentOrder?.items && currentOrder.items.length > 0 && (
+              <div className="border-t border-gray-700 pt-4">
+                <p className="text-gray-400 text-sm mb-3">Order Summary</p>
+                <div className="space-y-2">
+                  {currentOrder.items.slice(0, 3).map((item) => (
+                    <div key={item.id} className="flex justify-between items-center text-sm">
+                      <span className="text-gray-300">
+                        {item.quantity}x {item.name}
+                      </span>
+                      <span className="text-accent">Rs. {item.price * item.quantity}</span>
+                    </div>
+                  ))}
+                  {currentOrder.items.length > 3 && (
+                    <p className="text-gray-500 text-xs">+{currentOrder.items.length - 3} more items</p>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* Stage Tracker */}
-            <div className="flex justify-between items-center mb-4">
-              {statuses.map((status, index) => (
-                <div key={status.key} className="flex flex-col items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all ${
-                      index <= currentIndex
-                        ? 'bg-accent text-background'
-                        : 'bg-gray-700 text-gray-400'
-                    }`}
-                  >
-                    {index <= currentIndex ? '✓' : (index + 1)}
-                  </div>
-                  <span
-                    className={`text-xs mt-2 text-center max-w-16 ${
-                      index <= currentIndex ? 'text-accent' : 'text-gray-400'
-                    }`}
-                  >
-                    {status.label.split(' ')[0]}
-                  </span>
+                <div className="border-t border-gray-700 mt-4 pt-4 flex justify-between font-bold">
+                  <span>Total</span>
+                  <span className="text-accent text-lg">Rs. {currentOrder.total_price}</span>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+          </div>
 
-            {/* Stage Connection Line */}
-            <div className="flex items-center gap-2">
-              {statuses.map((_, index) => (
-                <div
-                  key={index}
-                  className={`flex-1 h-1 ${
-                    index < currentIndex ? 'bg-accent' : 'bg-gray-700'
-                  }`}
-                />
-              ))}
+          {/* Current Status Highlight */}
+          <div className="bg-accent/10 border border-accent/30 rounded-2xl p-6 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-3xl">{currentStatus.icon}</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-accent mb-1">{currentStatus.title}</h3>
+                <p className="text-gray-300">{currentStatus.subtitle}</p>
+              </div>
             </div>
           </div>
 
+          {/* Timeline Tracker */}
+          <div className="bg-card rounded-2xl p-6">
+            <h3 className="text-lg font-bold mb-6">Order Timeline</h3>
+            
+            <div className="relative">
+              {/* Vertical Line */}
+              <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-gray-700" />
+              
+              {/* Timeline Items */}
+              {statuses.map((status, index) => {
+                const isCompleted = index <= currentIndex;
+                const isCurrent = index === currentIndex;
+                
+                return (
+                  <div key={status.key} className="relative flex gap-4 mb-6 last:mb-0">
+                    {/* Status Dot */}
+                    <div className="relative z-10 w-8 h-8 flex items-center justify-center flex-shrink-0">
+                      <div className={`w-full h-full rounded-full flex items-center justify-center ${
+                        isCompleted 
+                          ? 'bg-accent text-background' 
+                          : 'bg-gray-700 text-gray-400'
+                      }`}>
+                        {isCompleted ? '✓' : (index + 1)}
+                      </div>
+                    </div>
+                    
+                    {/* Status Content */}
+                    <div className="flex-1 pt-0.5">
+                      <div className={`flex items-center gap-2 mb-1 ${
+                        isCompleted ? 'text-white' : 'text-gray-500'
+                      }`}>
+                        <span className="font-bold">{status.title}</span>
+                        {isCurrent && (
+                          <span className="px-2 py-0.5 bg-accent/20 text-accent text-xs rounded-full animate-pulse">
+                            NOW
+                          </span>
+                        )}
+                      </div>
+                      <p className={`text-sm ${
+                        isCompleted ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
+                        {status.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Test Button */}
           <button
             onClick={testLocalUpdate}
-            className="w-full bg-gray-700 text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-600 transition-colors"
+            className="w-full mt-6 bg-gray-700 text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-600 transition-colors"
           >
-            Test Status Update
+            🔄 Test Next Status
           </button>
         </div>
       </div>
