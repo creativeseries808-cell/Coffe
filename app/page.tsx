@@ -232,7 +232,7 @@ export default function CoffeeShop() {
           throw error;
         }
 
-        setCurrentOrder({ ...data, items: cart });
+        setCurrentOrder({ ...(data as any), items: cart });
       } else {
         const mockOrder: Order = {
           id: `ORDER-${Date.now()}`,
