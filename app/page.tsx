@@ -342,12 +342,36 @@ export default function CoffeeShop() {
                 <p className="text-xs text-gray-400 mb-2">{item.description}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-accent font-bold">Rs. {item.price}</span>
-                  <button
-                    onClick={() => addToCart(item)}
-                    className="bg-accent text-background px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity"
-                  >
-                    + Add
-                  </button>
+                  {(() => {
+                    const cartItem = cart.find(i => i.id === item.id);
+                    if (cartItem) {
+                      return (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateQuantity(item.id, cartItem.quantity - 1)}
+                            className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center hover:bg-gray-600 transition-colors"
+                          >
+                            -
+                          </button>
+                          <span className="text-white font-semibold w-8 text-center">{cartItem.quantity}</span>
+                          <button
+                            onClick={() => addToCart(item)}
+                            className="w-8 h-8 rounded-full bg-accent text-background flex items-center justify-center hover:opacity-90 transition-opacity"
+                          >
+                            +
+                          </button>
+                        </div>
+                      );
+                    }
+                    return (
+                      <button
+                        onClick={() => addToCart(item)}
+                        className="bg-accent text-background px-4 py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                      >
+                        + Add
+                      </button>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
