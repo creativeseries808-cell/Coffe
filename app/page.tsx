@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
+import { useAppStore } from '../lib/store';
 
 type MenuItem = {
   id: string;
@@ -50,15 +51,16 @@ try {
 }
 
 export default function CoffeeShop() {
-  const [stage, setStage] = useState<1 | 2 | 3 | 4>(1);
+  const [stage, setStage] = useState(1);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orderType, setOrderType] = useState<OrderType>('dine-in');
+  const [orderType, setOrderType] = useState<OrderType>('drive-thru');
   const [arrivalTime, setArrivalTime] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
-  const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  
+  // Use global store
+  const { currentOrder, setCurrentOrder, addOrder, updateOrderStatus } = useAppStore();
 
   const sampleMenuItems: MenuItem[] = [
     {
@@ -233,7 +235,9 @@ export default function CoffeeShop() {
           throw error;
         }
 
-        setCurrentOrder({ ...(data as any), items: cart });
+        const newOrder = { ...(data as any), items: cart };
+        setCurrentOrder(newOrder);
+        addOrder(newOrder);
       } else {
         const mockOrder: Order = {
           id: `ORDER-${Date.now()}`,
@@ -247,6 +251,7 @@ export default function CoffeeShop() {
           items: cart
         };
         setCurrentOrder(mockOrder);
+        addOrder(mockOrder);
       }
       
       setStage(3);
@@ -259,9 +264,11 @@ export default function CoffeeShop() {
         total_price: calculateTotal(),
         payment_status: 'paid',
         order_status: 'received',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        items: cart
       };
       setCurrentOrder(mockOrder);
+      addOrder(mockOrder);
       setStage(3);
     } finally {
       setIsPaymentLoading(false);
@@ -275,10 +282,7 @@ export default function CoffeeShop() {
     const currentIndex = statuses.indexOf(currentOrder.order_status);
     const nextIndex = (currentIndex + 1) % statuses.length;
 
-    setCurrentOrder({
-      ...currentOrder,
-      order_status: statuses[nextIndex]
-    });
+    updateOrderStatus(currentOrder.id, statuses[nextIndex]);
   };
 
   const renderStage1 = () => (

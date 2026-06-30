@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useAppStore } from '../../lib/store';
 
 type Order = {
   id: string;
@@ -29,27 +30,14 @@ const statuses = [
 ];
 
 export default function AdminPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  // Use global store
+  const { orders, updateOrderStatus, addOrder } = useAppStore();
 
   // Fetch orders
   const fetchOrders = async () => {
     if (!supabase) {
-      // Demo mode - show sample orders
-      setOrders([
-        {
-          id: 'demo1',
-          customer_phone: '+923001234567',
-          order_type: 'drive-thru',
-          total_price: 700,
-          payment_status: 'paid',
-          order_status: 'received',
-          items: [
-            { name: 'Latte', quantity: 2, price: 350 }
-          ],
-          created_at: new Date().toISOString()
-        }
-      ]);
+      // Demo mode - store orders are already managed globally
       setLoading(false);
       return;
     }
@@ -59,26 +47,24 @@ export default function AdminPage() {
       .select('*')
       .order('created_at', { ascending: false });
     
-    setOrders(data || []);
+    if (data) {
+      data.forEach(order => addOrder(order));
+    }
     setLoading(false);
   };
 
-  // Update order status
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    if (!supabase) {
-      // Demo mode - update local state
-      setOrders(prev => prev.map(order => 
-        order.id === orderId 
-          ? { ...order, order_status: newStatus as any } 
-          : order
-      ));
-      return;
+  // Update order status (use store update, and also update supabase if needed)
+  const updateStatus = async (orderId: string, newStatus: string) => {
+    // Update local store first (instant update)
+    updateOrderStatus(orderId, newStatus as any);
+    
+    // Also update in supabase if available
+    if (supabase) {
+      await supabase
+        .from('orders')
+        .update({ order_status: newStatus })
+        .eq('id', orderId);
     }
-
-    await supabase
-      .from('orders')
-      .update({ order_status: newStatus })
-      .eq('id', orderId);
   };
 
   // Real-time subscription
@@ -173,7 +159,7 @@ export default function AdminPage() {
                         {statuses.map((status) => (
                           <button
                             key={status.key}
-                            onClick={() => updateOrderStatus(order.id, status.key)}
+                            onClick={() => updateStatus(order.id, status.key)}
                             disabled={order.order_status === status.key}
                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                               order.order_status === status.key
