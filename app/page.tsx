@@ -34,7 +34,18 @@ type Order = {
 
 // Demo mode: Supabase integration disabled by default
 // Add your Supabase credentials in .env.local to enable
-const supabase = null;
+let supabase: ReturnType<typeof createClient> | null = null;
+
+try {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  if (supabaseUrl && supabaseAnonKey) {
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+  }
+} catch (error) {
+  console.log('Supabase not configured, using demo mode');
+}
 
 export default function CoffeeShop() {
   const [stage, setStage] = useState<1 | 2 | 3 | 4>(1);
