@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
 
 type MenuItem = {
@@ -283,9 +284,17 @@ export default function CoffeeShop() {
   const renderStage1 = () => (
     <div className="min-h-screen bg-background p-4 pb-32">
       <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-accent mb-2">☕ Luxury Coffee</h1>
-          <p className="text-gray-400">📍 Mingora Bypass Branch</p>
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-accent mb-2">☕ Luxury Coffee</h1>
+            <p className="text-gray-400">📍 Mingora Bypass Branch</p>
+          </div>
+          <Link 
+            href="/admin"
+            className="bg-gray-700 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-600 transition-all"
+          >
+            ⚙️ Admin
+          </Link>
         </div>
 
         <div className="bg-card rounded-2xl p-4 mb-6">
