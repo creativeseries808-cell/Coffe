@@ -516,13 +516,40 @@ export default function CoffeeShop() {
 
   const renderStage4 = () => {
     const statuses = [
-      { key: 'received', label: 'Received', icon: '📥' },
-      { key: 'brewing', label: 'Brewing', icon: '☕' },
-      { key: 'ready', label: 'Ready at Window', icon: '🏁' },
-      { key: 'completed', label: 'Completed', icon: '✨' }
+      { 
+        key: 'received', 
+        label: 'Order Received', 
+        icon: '📥',
+        message: 'We have received your order!',
+        etaMinutes: 6
+      },
+      { 
+        key: 'brewing', 
+        label: 'Brewing', 
+        icon: '☕',
+        message: 'Your coffee is being brewed fresh!',
+        etaMinutes: 4
+      },
+      { 
+        key: 'ready', 
+        label: 'Ready', 
+        icon: '🏁',
+        message: 'Your order is ready for pickup!',
+        etaMinutes: 1
+      },
+      { 
+        key: 'completed', 
+        label: 'Completed', 
+        icon: '✨',
+        message: 'Enjoy your coffee! Thank you for your order!',
+        etaMinutes: 0
+      }
     ];
 
-    const currentIndex = statuses.findIndex(s => s.key === currentOrder?.order_status);
+    const currentIndex = statuses.findIndex(s => s.key === currentOrder?.order_status) || 0;
+    const currentStatus = statuses[currentIndex];
+    const totalStages = statuses.length;
+    const progressPercentage = Math.round(((currentIndex + 1) / totalStages) * 100);
 
     return (
       <div className="min-h-screen bg-background p-4 flex items-center justify-center">
@@ -535,32 +562,64 @@ export default function CoffeeShop() {
           </button>
 
           <div className="bg-card rounded-2xl p-6 mb-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">Live Order Tracker</h2>
+            <h2 className="text-2xl font-bold mb-2 text-center">Live Order Tracker</h2>
             <p className="text-center text-gray-400 mb-6">Order ID: {currentOrder?.id}</p>
 
+            {/* Large Progress Bar */}
+            <div className="mb-8">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-400">Order Progress</span>
+                <span className="text-sm font-bold text-accent">{progressPercentage}%</span>
+              </div>
+              <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                <div 
+                  className="h-full bg-accent transition-all duration-500"
+                  style={{ width: `${progressPercentage}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Current Status Section */}
+            <div className="text-center mb-8">
+              <div className="w-20 h-20 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">{currentStatus.icon}</span>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">{currentStatus.label}</h3>
+              <p className="text-gray-300">{currentStatus.message}</p>
+              
+              {currentStatus.etaMinutes > 0 && (
+                <div className="mt-4 p-4 bg-gray-700 rounded-xl">
+                  <p className="text-sm text-gray-400 mb-1">Estimated Time Remaining</p>
+                  <p className="text-3xl font-bold text-accent">{currentStatus.etaMinutes} min</p>
+                </div>
+              )}
+            </div>
+
+            {/* Stage Tracker */}
             <div className="flex justify-between items-center mb-4">
               {statuses.map((status, index) => (
                 <div key={status.key} className="flex flex-col items-center">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center text-xl ${
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all ${
                       index <= currentIndex
                         ? 'bg-accent text-background'
                         : 'bg-gray-700 text-gray-400'
                     }`}
                   >
-                    {status.icon}
+                    {index <= currentIndex ? '✓' : (index + 1)}
                   </div>
                   <span
-                    className={`text-xs mt-2 ${
+                    className={`text-xs mt-2 text-center max-w-16 ${
                       index <= currentIndex ? 'text-accent' : 'text-gray-400'
                     }`}
                   >
-                    {status.label}
+                    {status.label.split(' ')[0]}
                   </span>
                 </div>
               ))}
             </div>
 
+            {/* Stage Connection Line */}
             <div className="flex items-center gap-2">
               {statuses.map((_, index) => (
                 <div
@@ -577,7 +636,7 @@ export default function CoffeeShop() {
             onClick={testLocalUpdate}
             className="w-full bg-gray-700 text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-600 transition-colors"
           >
-            Test Local Update
+            Test Status Update
           </button>
         </div>
       </div>
