@@ -38,7 +38,13 @@ export const useAppStore = create<AppState>()(
   persist(
     (set) => ({
       orders: [],
-      addOrder: (order) => set((state) => ({ orders: [order, ...state.orders] })),
+      addOrder: (order) => set((state) => {
+    // Avoid duplicate orders
+    if (state.orders.some(o => o.id === order.id)) {
+      return state;
+    }
+    return { orders: [order, ...state.orders] };
+  }),
       updateOrderStatus: (orderId, status) => 
         set((state) => ({
           orders: state.orders.map(order => 

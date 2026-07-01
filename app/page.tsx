@@ -32,7 +32,7 @@ type Order = {
   payment_status: 'pending' | 'paid' | 'failed';
   order_status: OrderStatus;
   created_at: string;
-  items?: CartItem[];
+  items: CartItem[];
 };
 
 // Demo mode: Supabase integration disabled by default
@@ -164,7 +164,11 @@ export default function CoffeeShop() {
           filter: `id=eq.${orderId}`
         },
         (payload) => {
-          setCurrentOrder(payload.new as Order);
+          const newOrder = payload.new as any;
+          setCurrentOrder({
+            ...newOrder,
+            items: (newOrder.items || []) as CartItem[]
+          });
         }
       )
       .subscribe();

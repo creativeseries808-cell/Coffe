@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useAppStore } from '../../lib/store';
 
+type CartItem = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+  category: string;
+  quantity: number;
+};
+
 type Order = {
   id: string;
   customer_phone: string;
@@ -12,7 +22,7 @@ type Order = {
   total_price: number;
   payment_status: string;
   order_status: 'received' | 'brewing' | 'ready' | 'completed';
-  items: any[];
+  items: CartItem[];
   created_at: string;
 };
 
@@ -48,7 +58,14 @@ export default function AdminPage() {
       .order('created_at', { ascending: false });
     
     if (data) {
-      data.forEach(order => addOrder(order));
+      // Clear existing orders and add fresh ones from Supabase
+      data.forEach(order => {
+        const orderWithItems: Order = {
+          ...order,
+          items: (order.items || []) as CartItem[]
+        };
+        addOrder(orderWithItems);
+      });
     }
     setLoading(false);
   };
